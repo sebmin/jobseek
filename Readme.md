@@ -10,6 +10,8 @@ flowchart LR
   form --> offers["Get the most suitable offers"]
 ```
 
+
+
 Phase 2
 User upload its own CV and get the most suitable offers.
 
@@ -18,6 +20,8 @@ flowchart LR
   user([User]) --> cv["Upload own CV"]
   cv --> offers["Get the most suitable offers"]
 ```
+
+
 
 Phase 3
 User make a conversation with Agent to fit the best offer.
@@ -34,31 +38,34 @@ sequenceDiagram
 ```
 
 
+
 TECHNICAL DETAILS
 
 Phase 1
 
 1.1 Job offers - source
-- Load offers from X site to download html
-- Parse html to get static and dynamic properties
+
+- Load offers from X site to download html files (Scraper)
+- Parse html to get static and dynamic properties (Parser)
 
 1.2 Job offers - categorize
-- Categorize static properties from the known html structure 
-    - Contract type (ex permanent)
-    - Level (ex Junior, Senior)
-    - Working mode (ex Remote, Hybrid)
-    - List of tech stack (ex .Net, Angular)
-    - Company
-    - List of places (cities)
 
+- Categorize static properties from the known html structure ex
+  - Contract type (ex permanent)
+  - Level (ex Junior, Senior)
+  - Working mode (ex Remote, Hybrid)
+  - List of tech stack (ex .Net, Angular)
+  - Company
+  - List of places (cities)
 - Categorize dynamic text (title and description) to use LLM to extract more properties
 To be determined which exactly fields!
 
-
 1.3 Candidate profile - structure
-- Create structure 
+
+- Create structure
 
 1.4 Comparison
+
 - calculate math based on the mathematical algoritm
 - For the best 10-15 suitable offers run LLM to create logical summary and focus on details
 
@@ -93,6 +100,8 @@ flowchart TD
   structure --> math
 ```
 
+
+
 ```mermaid
 flowchart LR
   subgraph ai ["AI"]
@@ -100,4 +109,6 @@ flowchart LR
     structureInput["Structure input"] --> llm["LLM"] --> structureOutput["Structure output"]
   end
 ```
+
+
 
