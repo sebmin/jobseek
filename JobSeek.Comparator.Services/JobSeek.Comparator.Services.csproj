@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>JobSeek.Comparator.Services</RootNamespace>
+    <AssemblyName>JobSeek.Comparator.Services</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\JobSeek.Categorizator.Contracts\JobSeek.Categorizator.Contracts.csproj" />
+    <ProjectReference Include="..\JobSeek.Comparator.Contracts\JobSeek.Comparator.Contracts.csproj" />
+  </ItemGroup>
+
+</Project>

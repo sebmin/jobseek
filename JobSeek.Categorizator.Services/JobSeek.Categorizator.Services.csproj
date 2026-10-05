@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>JobSeek.Categorizator.Services</RootNamespace>
+    <AssemblyName>JobSeek.Categorizator.Services</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\JobSeek.Categorizator.Contracts\JobSeek.Categorizator.Contracts.csproj" />
+  </ItemGroup>
+
+</Project>
