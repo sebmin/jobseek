@@ -64,7 +64,14 @@ To be determined which exactly fields!
 
 - Create structure
 
-1.4 Comparison
+1.4 Normalization
+
+- Normalize categories with AI so the same concept uses one name
+  - Tech stack (ex .Net, .NET C#, C# → .NET)
+  - Contract type, level, working mode, places, and other extracted properties
+- Apply the same vocabulary to offer properties and the candidate profile
+
+1.5 Comparison
 
 - calculate math based on the mathematical algoritm
 - For the best 10-15 suitable offers run LLM to create logical summary and focus on details
@@ -84,20 +91,27 @@ flowchart TD
 
   parse --> static
   parse --> dynamic
+  parse ~~~ structure
 
   subgraph profile ["1.3 Candidate profile - structure"]
     structure["Create structure"]
   end
 
-  subgraph comparison ["1.4 Comparison"]
+  subgraph normalization ["1.4 Normalization"]
+    normalize["AI attributes normalization"]
+  end
+
+  static --> normalize
+  dynamic --> normalize
+  structure --> normalize
+
+  subgraph comparison ["1.5 Comparison"]
     direction TB
     math["Calculate with the mathematical algorithm"] --> best["Best 10-15 suitable offers"]
     best --> summary["AI logical summary, focus on details"]
   end
 
-  static --> math
-  dynamic --> math
-  structure --> math
+  normalize --> math
 ```
 
 
