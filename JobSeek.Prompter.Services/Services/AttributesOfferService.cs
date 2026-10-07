@@ -11,7 +11,19 @@ namespace JobSeek.Prompter.Services
     {
         private readonly IChatClient _chatClient;
 
-        public AttributesOfferService(IChatClient chatClient) => _chatClient = chatClient;
+        public AttributesOfferService(IChatClient chatClient, string? model = null)
+        {
+            _chatClient = chatClient;
+            Model = string.IsNullOrWhiteSpace(model) ? ResolveModel() : model.Trim();
+        }
+
+        public string Model { get; }
+
+        public static string ResolveModel()
+        {
+            var model = Environment.GetEnvironmentVariable("LLM_MODEL");
+            return string.IsNullOrWhiteSpace(model) ? "gpt-4o-mini" : model.Trim();
+        }
 
         public async Task<OfferAttributesDto> ExtractAttributes(
             Guid id,
@@ -42,10 +54,10 @@ namespace JobSeek.Prompter.Services
         {
             var apiKey = Environment.GetEnvironmentVariable("OPENAI_JOBSEEK_API_KEY")
                 ?? throw new InvalidOperationException("OPENAI_JOBSEEK_API_KEY is not set.");
-            var model = Environment.GetEnvironmentVariable("LLM_MODEL") ?? "gpt-4o-mini";
+            var model = ResolveModel();
 
             IChatClient client = new OpenAI.Chat.ChatClient(model, apiKey).AsIChatClient();
-            return new AttributesOfferService(client);
+            return new AttributesOfferService(client, model);
         }
 
         private static List<OfferSkillDto> MapSkills(
