@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RunSettings>
+  <RunConfiguration>
+    <!-- Live LLM projects stay out of the ordinary suite. Run them by project or with TestCategory=Llm. -->
+    <TestCaseFilter>TestCategory!=Llm</TestCaseFilter>
+  </RunConfiguration>
+</RunSettings>
