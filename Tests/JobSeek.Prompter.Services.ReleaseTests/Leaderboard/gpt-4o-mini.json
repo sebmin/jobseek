@@ -1,0 +1,102 @@
+{
+  "model": "gpt-4o-mini",
+  "ranAt": "2026-10-07T17:25:02.0600035+00:00",
+  "criteria": [
+    {
+      "id": "MH-01",
+      "name": "Offer id is returned in the schema",
+      "passed": 1,
+      "total": 1
+    },
+    {
+      "id": "MH-02",
+      "name": "Static required skill keeps its name and level",
+      "passed": 1,
+      "total": 1
+    },
+    {
+      "id": "MH-03",
+      "name": "Static nice-to-have skill stays on its list",
+      "passed": 1,
+      "total": 1
+    },
+    {
+      "id": "MH-04",
+      "name": "An untagged technology goes to required",
+      "passed": 1,
+      "total": 1
+    },
+    {
+      "id": "MH-05",
+      "name": "An untagged technology goes to nice-to-have",
+      "passed": 1,
+      "total": 1
+    },
+    {
+      "id": "MH-06",
+      "name": "Static level wins over the description",
+      "passed": 1,
+      "total": 1
+    },
+    {
+      "id": "NH-01",
+      "name": "Senior-expert wording is level 4",
+      "passed": 1,
+      "total": 1
+    },
+    {
+      "id": "NH-02",
+      "name": "A Polish description uses English technical names",
+      "passed": 1,
+      "total": 1
+    },
+    {
+      "id": "NH-03",
+      "name": "A long description yields the required skills",
+      "passed": 1,
+      "total": 1
+    },
+    {
+      "id": "NH-04",
+      "name": "A plus-item stays on the nice-to-have list",
+      "passed": 1,
+      "total": 1
+    },
+    {
+      "id": "NH-05",
+      "name": "Negation, levels, and the static list stay distinct",
+      "passed": 1,
+      "total": 1
+    },
+    {
+      "id": "NH-06",
+      "name": "A buried .NET offer yields at least 50 required skills",
+      "passed": 0,
+      "total": 1
+    },
+    {
+      "id": "SH-01",
+      "name": "Benefits, soft skills, and spoken languages are dropped",
+      "passed": 1,
+      "total": 1
+    },
+    {
+      "id": "SH-02",
+      "name": "An untagged technical skill is still extracted",
+      "passed": 1,
+      "total": 1
+    },
+    {
+      "id": "SH-03",
+      "name": "A named-only skill is not treated as senior",
+      "passed": 1,
+      "total": 1
+    },
+    {
+      "id": "SH-04",
+      "name": "An English requirements section extracts the technology",
+      "passed": 1,
+      "total": 1
+    }
+  ]
+}
