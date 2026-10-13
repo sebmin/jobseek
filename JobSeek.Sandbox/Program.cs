@@ -18,6 +18,7 @@ internal static class Program
         {
             "categorizator" => CategorizatorProgram.Run(rest),
             "comparator" => ComparatorProgram.Run(rest),
+            "normalizator" => await NormalizatorProgram.Run(rest),
             "prompter" => await PrompterProgram.Run(rest),
             _ => Unknown(command)
         };
@@ -32,7 +33,7 @@ internal static class Program
     }
 
     private const string Usage = """
-        JobSeek.Sandbox runs the categorizator, comparator, and prompter programs.
+        JobSeek.Sandbox runs the categorizator, comparator, normalizator, and prompter programs.
 
         Usage:
           dotnet run --project JobSeek.Sandbox -- <command> [options]
@@ -40,6 +41,7 @@ internal static class Program
         Commands:
           categorizator   Map parsed offers to comparison fields
           comparator      Rank offers against a candidate
+          normalizator    Build a master skill list from offer attributes
           prompter        Extract skills from offer descriptions
 
         Run a command with --help for its options.

@@ -28,12 +28,12 @@ namespace JobSeek.Prompter.Services
         public async Task<OfferAttributesDto> ExtractAttributes(
             Guid id,
             string description,
-            List<SkillDto> requiredSkills,
-            List<SkillDto> niceToHaveSkills)
+            List<SkillDto> requiredStaticSkills,
+            List<SkillDto> niceToHaveStaticSkills)
         {
             List<ChatMessage> messages =
             [
-                new(ChatRole.System, OfferAttributesPrompt.System(requiredSkills, niceToHaveSkills)),
+                new(ChatRole.System, OfferAttributesPrompt.System(requiredStaticSkills, niceToHaveStaticSkills)),
                 new(ChatRole.User, description)
             ];
 
@@ -46,8 +46,8 @@ namespace JobSeek.Prompter.Services
 
             return new OfferAttributesDto(
                 id,
-                MapSkills(parsed.RequiredSkills, requiredSkills),
-                MapSkills(parsed.NiceToHaveSkills, niceToHaveSkills));
+                MapSkills(parsed.RequiredSkills, requiredStaticSkills),
+                MapSkills(parsed.NiceToHaveSkills, niceToHaveStaticSkills));
         }
 
         public static AttributesOfferService CreateService()

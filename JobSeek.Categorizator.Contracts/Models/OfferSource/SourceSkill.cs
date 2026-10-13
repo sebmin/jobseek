@@ -1,6 +1,6 @@
 namespace JobSeek.Categorizator.Contracts.Models.OfferSource;
 
-public sealed class SourceSkill
+public sealed class SourceStaticSkill
 {
     public string? Name { get; init; }
     public int Level { get; init; }

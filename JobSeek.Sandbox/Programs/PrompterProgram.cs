@@ -1,10 +1,12 @@
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using JobSeek.Categorizator.Contracts.Models.Contract;
 using JobSeek.Categorizator.Contracts.Models.OfferSource;
+using JobSeek.Normalizator.Contracts.Services;
+using JobSeek.Normalizator.Services.Services;
 using JobSeek.Prompter.Contracts.Models;
 using JobSeek.Prompter.Contracts.Services;
 using JobSeek.Prompter.Services;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace JobSeek.Sandbox.Programs;
 
@@ -20,7 +22,7 @@ internal static class PrompterProgram
 
     public static async Task<int> Run(string[] args)
     {
-        if (!TryParse(args, out var offersFile, out var outputFile, out var help, out var error))
+        if (!TryParse(args, out var offersFile, out var outputFile, out var masterListFile, out var help, out var error))
         {
             Console.Error.WriteLine(error);
             Console.Error.WriteLine();
@@ -40,13 +42,21 @@ internal static class PrompterProgram
             return 1;
         }
 
+        if (!File.Exists(masterListFile))
+        {
+            Console.Error.WriteLine($"Master list file does not exist: {masterListFile}");
+            return 1;
+        }
+
         var json = await File.ReadAllTextAsync(offersFile);
         var sourceOffers = JsonSerializer.Deserialize<List<SourceOffer>>(json, JsonOptions) ?? [];
         var results = await ReadExistingAsync(outputFile);
         var done = results.Select(offer => offer.Id).ToHashSet();
-        IAttributesOfferService service = AttributesOfferService.CreateService();
+        var masterSkills = await ReadMasterListAsync(masterListFile);
+        var service = AttributesOfferService.CreateService();
+        using var skillNormalizationService = SkillNormalizationService.CreateService(masterSkills);
 
-        for (var index = 0; index < 3; index++)
+        for (var index = 0; index < 10; index++)
         {
             var source = sourceOffers[index];
             if (!Guid.TryParse(source.Guid, out var id))
@@ -59,8 +69,9 @@ internal static class PrompterProgram
             }
 
             Console.WriteLine($"[{index + 1}/{sourceOffers.Count}] {source.Slug}");
-            var required = MapSkills(source.RequiredSkills);
-            var niceToHave = MapSkills(source.NiceToHaveSkills);
+            var required = MapAndNormalizeSkills(source.RequiredSkills, skillNormalizationService);
+            var niceToHave = MapAndNormalizeSkills(source.NiceToHaveSkills, skillNormalizationService);
+
 
             try
             {
@@ -89,11 +100,20 @@ internal static class PrompterProgram
         return 0;
     }
 
-    private static List<SkillDto> MapSkills(List<SourceSkill>? skills) =>
+    private static List<SkillDto> MapAndNormalizeSkills(List<SourceStaticSkill>? skills, ISkillNormalizationService skillNormalizationService) =>
         (skills ?? [])
             .Where(skill => !string.IsNullOrWhiteSpace(skill.Name))
-            .Select(skill => new SkillDto(skill.Name!, skill.Level))
+            .Select(skill => new SkillDto(skillNormalizationService.CreateNormalizedSkill(skill.Name!), skill.Level))
             .ToList();
+
+    private static async Task<List<string>> ReadMasterListAsync(string masterListFile)
+    {
+        var json = await File.ReadAllTextAsync(masterListFile);
+        if (string.IsNullOrWhiteSpace(json))
+            return [];
+
+        return JsonSerializer.Deserialize<List<string>>(json, JsonOptions) ?? [];
+    }
 
     private static async Task<List<OfferSkillsRecord>> ReadExistingAsync(string outputFile)
     {
@@ -123,9 +143,10 @@ internal static class PrompterProgram
           dotnet run --project JobSeek.Sandbox -- prompter [options]
 
         Options:
-          --offers <file>   Parsed offers. Default: ./data/offers.json
-          --output <file>   Combined skills. Default: ./data/offer-attributes.json
-          --help            Show this help
+          --offers <file>       Parsed offers. Default: ./data/offers.json
+          --output <file>       Combined skills. Default: ./data/offer-attributes.json
+          --master-list <file>  Canonical skill names. Default: ./data/skill-master-list.json
+          --help                Show this help
 
         Requires OPENAI_API_KEY. LLM_MODEL is optional.
         Run it from the repository root.
@@ -135,11 +156,13 @@ internal static class PrompterProgram
         string[] args,
         out string offersFile,
         out string outputFile,
+        out string masterListFile,
         out bool help,
         out string error)
     {
         offersFile = Path.Combine(Directory.GetCurrentDirectory(), "data", "offers.json");
         outputFile = Path.Combine(Directory.GetCurrentDirectory(), "data", "offer-attributes.json");
+        masterListFile = Path.Combine(Directory.GetCurrentDirectory(), "data", "skill-master-list.json");
         help = false;
         error = "";
 
@@ -166,6 +189,9 @@ internal static class PrompterProgram
                     break;
                 case "--output":
                     outputFile = Path.GetFullPath(value);
+                    break;
+                case "--master-list":
+                    masterListFile = Path.GetFullPath(value);
                     break;
                 default:
                     error = $"Unknown option '{arg}'.";

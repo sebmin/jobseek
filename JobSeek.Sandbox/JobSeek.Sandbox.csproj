@@ -12,6 +12,7 @@
   <ItemGroup>
     <ProjectReference Include="..\JobSeek.Categorizator.Services\JobSeek.Categorizator.Services.csproj" />
     <ProjectReference Include="..\JobSeek.Comparator.Services\JobSeek.Comparator.Services.csproj" />
+    <ProjectReference Include="..\JobSeek.Normalizator.Services\JobSeek.Normalizator.Services.csproj" />
     <ProjectReference Include="..\JobSeek.Prompter.Services\JobSeek.Prompter.Services.csproj" />
   </ItemGroup>
 

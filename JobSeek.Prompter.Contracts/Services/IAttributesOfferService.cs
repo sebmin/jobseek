@@ -8,6 +8,6 @@ public interface IAttributesOfferService
     Task<OfferAttributesDto> ExtractAttributes(
         Guid id,
         string description,
-        List<SkillDto> requiredSkills,
-        List<SkillDto> niceToHaveSkills);
+        List<SkillDto> requiredStaticSkills,
+        List<SkillDto> niceToHaveStaticSkills);
 }
