@@ -99,7 +99,7 @@ internal static class ComparatorProgram
             ToSkills(source.NiceToHaveSkills));
     }
 
-    private static IReadOnlyList<Skill> ToSkills(List<SourceSkill>? skills) =>
+    private static IReadOnlyList<Skill> ToSkills(List<SourceStaticSkill>? skills) =>
         (skills ?? []).Select(skill => new Skill(skill.Name ?? "", skill.Level)).ToArray();
 
     private static Candidate ToCandidate(SourceCandidate source) =>

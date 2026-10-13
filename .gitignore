@@ -1,6 +1,13 @@
 # Scraped offers and manifests
 data/
 
+# Committed alias map. data/ also matches Data/ on Windows.
+!JobSeek.Normalizator.Services/Data/
+!JobSeek.Normalizator.Services/Data/skill-aliases.json
+
+# Local embedding model
+JobSeek.Normalizator.Services/Models/
+
 # Site-specific ingestion, kept local
 Scraper/
 Parser/
@@ -18,6 +25,7 @@ Parser/
 *.sln.docstates
 *.env
 testconfig.json
+JobSeek.Sandbox/Properties/launchSettings.json
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs

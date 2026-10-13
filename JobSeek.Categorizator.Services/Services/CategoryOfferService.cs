@@ -25,7 +25,7 @@ namespace JobSeek.Categorizator.Services
                 MapSkillDtos(source.NiceToHaveSkills));
         }
 
-        private static IReadOnlyList<SkillDto> MapSkillDtos(List<SourceSkill>? skills) =>
+        private static IReadOnlyList<SkillDto> MapSkillDtos(List<SourceStaticSkill>? skills) =>
             (skills ?? []).Select(item => new SkillDto(item.Name ?? "", item.Level)).ToArray();
 
         public static CategoryOfferService CreateService() => new();//TODO: IoC

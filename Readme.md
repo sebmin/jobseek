@@ -8,11 +8,12 @@ There is no web form, CV upload, or chat yet. Those are listed under [Roadmap](#
 
 | Piece | What it does |
 |---|---|
-| `AttributesOfferService` | Sends the offer text to the model and reads skills back as a fixed structure. Temperature is 0. |
+| `AttributesOfferService` | Sends the offer text to the model and reads skills back as a fixed structure. The master skill list is written into the response schema as the allowed skill names, so the model can only return skills from that dictionary. Temperature is 0. |
 | Release tests | The same offers go through the model. Must-have and Should-have rules block a release. A Nice-to-have miss is a known limit. |
 | `AttributeComparerService` | Scores a candidate against an offer. Required skills count for 0.8, nice-to-have skills for 0.2. |
 | `CategoryOfferService` | Maps a parsed offer onto the fields the comparer uses. |
-| `JobSeek.Sandbox` | Console entry point for the three programs above. |
+| `SkillConsolidationService` | Collapses extracted skill names that mean the same thing into one master list. |
+| `JobSeek.Sandbox` | Console entry point for the programs above. |
 
 Stack: .NET 10, C#, ASP.NET-style contracts, `Microsoft.Extensions.AI`, OpenAI structured output.
 
@@ -70,9 +71,37 @@ dotnet run --project JobSeek.Sandbox -- --help
 dotnet run --project JobSeek.Sandbox -- prompter --help
 dotnet run --project JobSeek.Sandbox -- comparator --help
 dotnet run --project JobSeek.Sandbox -- categorizator --help
+dotnet run --project JobSeek.Sandbox -- normalizator --help
 ```
 
 `prompter` needs `OPENAI_JOBSEEK_API_KEY`.
+
+## Build the master skill list
+
+`normalizator` reads required and nice-to-have skill names from `data/offer-attributes.json` and writes `data/skill-master-list.json`.
+
+```powershell
+dotnet run --project JobSeek.Sandbox -- normalizator
+```
+
+Run it from the repository root. Before consolidation the extracted names were 596 separate skills. After the normalizator, `data/skill-master-list.json` has 306.
+
+Two local embedding models were scored on the same pairs. Names that should become one skill: `javascript` / `js`, `unit tests` / `unit testing`, and Polish `bazy relacyjne` / `relational databases`. Names that should stay apart: `java` / `javascript`, `c#` / `c++`, and `react` / `kubernetes`. `multilingual-e5-small` gave high scores to unrelated skills as well as to aliases, so one cutoff could not both merge the aliases and keep Java apart from JavaScript. `paraphrase-multilingual-MiniLM-L12-v2` leaves a gap between those groups. The cutoff is 0.57.
+
+`prompter` sends that list as the allowed values for each skill name. Offer skills and candidate skills then share one dictionary, which is what the comparer matches on.
+
+## Download the embedding model
+
+The model files are not in the repo. `JobSeek.Normalizator.Services/Models/` is gitignored, so download them once on each machine. From the repository root:
+
+```powershell
+$dir = "JobSeek.Normalizator.Services/Models/paraphrase-multilingual-MiniLM-L12-v2"
+New-Item -ItemType Directory -Force -Path $dir | Out-Null
+Invoke-WebRequest -Uri "https://huggingface.co/sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2/resolve/main/sentencepiece.bpe.model" -OutFile "$dir/sentencepiece.bpe.model"
+Invoke-WebRequest -Uri "https://huggingface.co/Xenova/paraphrase-multilingual-MiniLM-L12-v2/resolve/main/onnx/model_quantized.onnx" -OutFile "$dir/model.onnx"
+```
+
+Save the quantized ONNX file as `model.onnx`. The normalizator and its unit tests look for `model.onnx` and `sentencepiece.bpe.model`.
 
 ## Layout
 
@@ -80,8 +109,10 @@ dotnet run --project JobSeek.Sandbox -- categorizator --help
 JobSeek.Categorizator.Contracts / Services   offer and candidate models, mapping
 JobSeek.Prompter.Contracts / Services        structured skill extraction
 JobSeek.Comparator.Contracts / Services      ranking
+JobSeek.Normalizator.Contracts / Services    master skill list
 JobSeek.Sandbox                              console runner
 Tests/JobSeek.Comparator.Services.UnitTests  offline ranking tests
+Tests/JobSeek.Normalizator.Services.UnitTests offline consolidation and normalization tests
 Tests/JobSeek.Prompter.Services.ReleaseTests ship / no-ship checks
 ```
 
@@ -92,7 +123,6 @@ Not built yet.
 1. A candidate enters a profile and receives ranked offers.
 2. A candidate uploads a CV and receives ranked offers.
 3. A candidate talks to an agent that narrows the offers.
-4. Offer text is normalized so `.Net`, `.NET C#`, and `C#` count as one skill.
-5. The best 10–15 offers get a short written explanation from the model.
+4. The best 10–15 offers get a short written explanation from the model.
 
 Saved offer text is what the tests use today. A live source of offers is not chosen yet.

@@ -17,8 +17,8 @@ public sealed class SourceOffer
     public CategoryValue? Category { get; init; }
     public HybridScheduleValue? HybridWorkSchedule { get; init; }
     public List<SourceEmployment>? EmploymentTypes { get; init; }
-    public List<SourceSkill>? RequiredSkills { get; init; }
-    public List<SourceSkill>? NiceToHaveSkills { get; init; }
+    public List<SourceStaticSkill>? RequiredSkills { get; init; }
+    public List<SourceStaticSkill>? NiceToHaveSkills { get; init; }
     public List<SourceLanguage>? Languages { get; init; }
     public List<SourceLocation>? Multilocation { get; init; }
 }
