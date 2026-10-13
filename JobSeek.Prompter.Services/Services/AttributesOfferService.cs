@@ -4,6 +4,10 @@ using JobSeek.Prompter.Contracts.Services;
 using JobSeek.Prompter.Models.StructureOutput;
 using JobSeek.Prompter.Prompts;
 using Microsoft.Extensions.AI;
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using Json.Schema;
+using SchemaValueType = Json.Schema.SchemaValueType;
 
 namespace JobSeek.Prompter.Services
 {
@@ -43,6 +47,83 @@ namespace JobSeek.Prompter.Services
 
             OfferAttributesResponse parsed = response.Result
                 ?? throw new InvalidOperationException("The model returned no attributes.");
+
+            return new OfferAttributesDto(
+                id,
+                MapSkills(parsed.RequiredSkills, requiredStaticSkills),
+                MapSkills(parsed.NiceToHaveSkills, niceToHaveStaticSkills));
+        }
+
+        public async Task<OfferAttributesDto> ExtractAttributes(
+            Guid id,
+            string description,
+            List<SkillDto> requiredStaticSkills,
+            List<SkillDto> niceToHaveStaticSkills,
+            List<string> databaseMasterList)
+        {
+            JsonNode[] allowedEnumValues = databaseMasterList
+                .Select(skill => JsonValue.Create(skill) as JsonNode)
+                .ToArray();
+
+            var skillAttributeSchema = new JsonSchemaBuilder()
+                .Type(SchemaValueType.Object)
+                .Properties(
+                    ("skill_name", new JsonSchemaBuilder()
+                        .Type(SchemaValueType.String)
+                        .Enum(allowedEnumValues)
+                        .Description(OfferAttributesPrompt.SkillName)
+                    ),
+                    ("skill_level", new JsonSchemaBuilder()
+                        .Type(SchemaValueType.Integer)
+                        .Minimum(1)
+                        .Maximum(5)
+                        .Description(OfferAttributesPrompt.SkillLevel)
+                    )
+                )
+                .Required("skill_name", "skill_level");
+
+            var responseSchema = new JsonSchemaBuilder()
+                .Type(SchemaValueType.Object)
+                .Properties(
+                    ("required_skills", new JsonSchemaBuilder()
+                        .Type(SchemaValueType.Array)
+                        .Items(skillAttributeSchema)
+                        .Description(OfferAttributesPrompt.RequiredSkills)
+                    ),
+                    ("nice_to_have_skills", new JsonSchemaBuilder()
+                        .Type(SchemaValueType.Array)
+                        .Items(skillAttributeSchema)
+                        .Description(OfferAttributesPrompt.NiceToHaveSkills)
+                    )
+                )
+                .Required("required_skills", "nice_to_have_skills")
+                .Build();
+
+            List<ChatMessage> messages =
+            [
+                new(ChatRole.System, OfferAttributesPrompt.System(requiredStaticSkills, niceToHaveStaticSkills)),
+                new(ChatRole.User, description)
+            ];
+
+            string schemaString = JsonSerializer.Serialize(responseSchema);
+            using JsonDocument parsedSchemaDoc = JsonDocument.Parse(schemaString);
+
+            var options = new ChatOptions
+            {
+                Temperature = 0,
+                ResponseFormat = ChatResponseFormat.ForJsonSchema(
+                    parsedSchemaDoc.RootElement,
+                    "OfferAttributesResponse")
+            };
+
+            ChatResponse response = await _chatClient.GetResponseAsync(messages, options);
+
+            string rawJson = response.Text
+                ?? throw new InvalidOperationException("The model returned no content.");
+
+            var optionsSerializer = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            OfferAttributesResponse parsed = JsonSerializer.Deserialize<OfferAttributesResponse>(rawJson, optionsSerializer)
+                ?? throw new InvalidOperationException("Failed to deserialize schema response.");
 
             return new OfferAttributesDto(
                 id,

@@ -8,7 +8,7 @@ There is no web form, CV upload, or chat yet. Those are listed under [Roadmap](#
 
 | Piece | What it does |
 |---|---|
-| `AttributesOfferService` | Sends the offer text to the model and reads skills back as a fixed structure. Temperature is 0. |
+| `AttributesOfferService` | Sends the offer text to the model and reads skills back as a fixed structure. The master skill list is written into the response schema as the allowed skill names, so the model can only return skills from that dictionary. Temperature is 0. |
 | Release tests | The same offers go through the model. Must-have and Should-have rules block a release. A Nice-to-have miss is a known limit. |
 | `AttributeComparerService` | Scores a candidate against an offer. Required skills count for 0.8, nice-to-have skills for 0.2. |
 | `CategoryOfferService` | Maps a parsed offer onto the fields the comparer uses. |
@@ -87,6 +87,8 @@ dotnet run --project JobSeek.Sandbox -- normalizator
 Run it from the repository root. Before consolidation the extracted names were 596 separate skills. After the normalizator, `data/skill-master-list.json` has 306.
 
 Two local embedding models were scored on the same pairs. Names that should become one skill: `javascript` / `js`, `unit tests` / `unit testing`, and Polish `bazy relacyjne` / `relational databases`. Names that should stay apart: `java` / `javascript`, `c#` / `c++`, and `react` / `kubernetes`. `multilingual-e5-small` gave high scores to unrelated skills as well as to aliases, so one cutoff could not both merge the aliases and keep Java apart from JavaScript. `paraphrase-multilingual-MiniLM-L12-v2` leaves a gap between those groups. The cutoff is 0.57.
+
+`prompter` sends that list as the allowed values for each skill name. Offer skills and candidate skills then share one dictionary, which is what the comparer matches on.
 
 ## Download the embedding model
 

@@ -10,4 +10,11 @@ public interface IAttributesOfferService
         string description,
         List<SkillDto> requiredStaticSkills,
         List<SkillDto> niceToHaveStaticSkills);
+
+    Task<OfferAttributesDto> ExtractAttributes(
+        Guid id,
+        string description,
+        List<SkillDto> requiredStaticSkills,
+        List<SkillDto> niceToHaveStaticSkills,
+        List<string> databaseMasterList);
 }

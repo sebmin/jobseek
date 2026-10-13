@@ -79,7 +79,7 @@ internal static class PrompterProgram
                     id,
                     source.DescriptionRaw ?? "",
                     required,
-                    niceToHave);
+                    niceToHave, masterSkills);
 
                 results.Add(new OfferSkillsRecord(
                     id,
@@ -144,7 +144,7 @@ internal static class PrompterProgram
 
         Options:
           --offers <file>       Parsed offers. Default: ./data/offers.json
-          --output <file>       Combined skills. Default: ./data/offer-attributes.json
+          --output <file>       Combined skills. Default: ./data/offer-master-attributes.json
           --master-list <file>  Canonical skill names. Default: ./data/skill-master-list.json
           --help                Show this help
 
@@ -161,7 +161,7 @@ internal static class PrompterProgram
         out string error)
     {
         offersFile = Path.Combine(Directory.GetCurrentDirectory(), "data", "offers.json");
-        outputFile = Path.Combine(Directory.GetCurrentDirectory(), "data", "offer-attributes.json");
+        outputFile = Path.Combine(Directory.GetCurrentDirectory(), "data", "offer-master-attributes.json");
         masterListFile = Path.Combine(Directory.GetCurrentDirectory(), "data", "skill-master-list.json");
         help = false;
         error = "";
