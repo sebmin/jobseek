@@ -37,8 +37,8 @@ namespace JobSeek.Prompter.Services
         {
             List<ChatMessage> messages =
             [
-                new(ChatRole.System, OfferAttributesPrompt.System(requiredStaticSkills, niceToHaveStaticSkills)),
-                new(ChatRole.User, description)
+                new(ChatRole.System, OfferAttributesPrompt.System),
+                new(ChatRole.User, OfferAttributesPrompt.User(description, requiredStaticSkills, niceToHaveStaticSkills))
             ];
 
             ChatResponse<OfferAttributesResponse> response = await _chatClient.GetResponseAsync<OfferAttributesResponse>(
@@ -71,7 +71,7 @@ namespace JobSeek.Prompter.Services
                     ("skill_name", new JsonSchemaBuilder()
                         .Type(SchemaValueType.String)
                         .Enum(allowedEnumValues)
-                        .Description(OfferAttributesPrompt.SkillName)
+                        .Description(OfferAttributesPrompt.MasterListSkillName)
                     ),
                     ("skill_level", new JsonSchemaBuilder()
                         .Type(SchemaValueType.Integer)
@@ -80,29 +80,32 @@ namespace JobSeek.Prompter.Services
                         .Description(OfferAttributesPrompt.SkillLevel)
                     )
                 )
-                .Required("skill_name", "skill_level");
+                .Required("skill_name", "skill_level")
+                .AdditionalProperties(false);
 
             var responseSchema = new JsonSchemaBuilder()
+                .Defs(("skill", skillAttributeSchema))
                 .Type(SchemaValueType.Object)
                 .Properties(
                     ("required_skills", new JsonSchemaBuilder()
                         .Type(SchemaValueType.Array)
-                        .Items(skillAttributeSchema)
+                        .Items(new JsonSchemaBuilder().Ref("#/$defs/skill"))
                         .Description(OfferAttributesPrompt.RequiredSkills)
                     ),
                     ("nice_to_have_skills", new JsonSchemaBuilder()
                         .Type(SchemaValueType.Array)
-                        .Items(skillAttributeSchema)
+                        .Items(new JsonSchemaBuilder().Ref("#/$defs/skill"))
                         .Description(OfferAttributesPrompt.NiceToHaveSkills)
                     )
                 )
                 .Required("required_skills", "nice_to_have_skills")
+                .AdditionalProperties(false)
                 .Build();
 
             List<ChatMessage> messages =
             [
-                new(ChatRole.System, OfferAttributesPrompt.System(requiredStaticSkills, niceToHaveStaticSkills)),
-                new(ChatRole.User, description)
+                new(ChatRole.System, OfferAttributesPrompt.MasterListSystem),
+                new(ChatRole.User, OfferAttributesPrompt.User(description, requiredStaticSkills, niceToHaveStaticSkills))
             ];
 
             string schemaString = JsonSerializer.Serialize(responseSchema);
@@ -111,6 +114,10 @@ namespace JobSeek.Prompter.Services
             var options = new ChatOptions
             {
                 Temperature = 0,
+                AdditionalProperties = new AdditionalPropertiesDictionary
+                {
+                    ["strict"] = true
+                },
                 ResponseFormat = ChatResponseFormat.ForJsonSchema(
                     parsedSchemaDoc.RootElement,
                     "OfferAttributesResponse")

@@ -6,6 +6,7 @@ namespace JobSeek.Prompter.Services.ReleaseTests.AttributesOfferService;
 
 [TestClass]
 [TestCategory("Llm")]
+[TestCategory("Freeform")]
 [TestCategory("Release-MustHave")]
 public sealed class MustHaveReleaseTests
 {

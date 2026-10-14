@@ -22,6 +22,18 @@ internal static class ReleaseSkillAssertions
         Assert.IsEmpty(overlap, "Skill on both lists: " + string.Join(", ", overlap));
     }
 
+    public static void AssertNonStaticNamesAreListed(OfferAttributesDto result, IReadOnlyList<string> masterList)
+    {
+        var allowed = new HashSet<string>(masterList, StringComparer.Ordinal);
+        foreach (var skill in result.RequiredSkills.Concat(result.NiceToHaveSkills))
+        {
+            if (skill.isStatic)
+                continue;
+
+            Assert.IsTrue(allowed.Contains(skill.Name), $"'{skill.Name}' is not on the master list.");
+        }
+    }
+
     public static OfferSkillDto AssertPresent(IReadOnlyList<OfferSkillDto> skills, string name)
     {
         var match = skills.FirstOrDefault(skill => SameSkill(skill.Name, name));
@@ -29,11 +41,12 @@ internal static class ReleaseSkillAssertions
         return match!;
     }
 
-    public static void AssertPresentWithLevel(IReadOnlyList<OfferSkillDto> skills, string name, int level)
+    public static OfferSkillDto AssertPresentWithLevel(IReadOnlyList<OfferSkillDto> skills, string name, int level)
     {
         var match = skills.FirstOrDefault(skill => SameSkill(skill.Name, name));
         Assert.IsNotNull(match, $"Missing '{name}'. Actual: {Format(skills)}");
         Assert.AreEqual(level, match.Level, $"Wrong level for '{name}'. Actual: {match.Level}, Expected: {level}");
+        return match!;
     }
 
     public static void AssertAbsentFrom(IReadOnlyList<OfferSkillDto> skills, string name)
