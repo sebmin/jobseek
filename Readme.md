@@ -129,6 +129,21 @@ The user message is about **700** tokens. It contains the static required and ni
 
 That is **1,728** token-equivalents less ($0.000259 per offer). One thousand cache hits cost about **$0.26** less ($0.629 versus $0.370). The first offer in a run pays the full prefix price and fills the cache.
 
+### 2. Define the skill schema once
+
+The master-list schema used to write the skill object, including the 306-name enum, under both `required_skills` and `nice_to_have_skills`. `AttributesOfferService` now stores that object in `$defs` and both arrays use `{ "$ref": "#/$defs/skill" }`.
+
+Measured input tokens for the same kind of call:
+
+| Schema | Input tokens | Price at $0.15 / 1M |
+|---|---:|---:|
+| Enum inlined twice | 4,750 | $0.000713 |
+| Shared `$ref` | 3,291 | $0.000494 |
+
+That is **1,459** fewer input tokens, **30.7%**. At the full input price the cut is 1,459 / 1,000,000 × $0.15 = **$0.000219** per offer. One thousand offers cost about **$0.22** less ($0.713 versus $0.494).
+
+This cut is on the request size, so it applies to the first offer in a run as well as to later ones. The cache figures above use a 2,793-token schema from before this change. They need a new split of schema, system prompt, and user message before they match the 3,291-token call.
+
 ## Download the embedding model
 
 The model files are not in the repo. `JobSeek.Normalizator.Services/Models/` is gitignored, so download them once on each machine. From the repository root:

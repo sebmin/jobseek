@@ -84,16 +84,17 @@ namespace JobSeek.Prompter.Services
                 .AdditionalProperties(false);
 
             var responseSchema = new JsonSchemaBuilder()
+                .Defs(("skill", skillAttributeSchema))
                 .Type(SchemaValueType.Object)
                 .Properties(
                     ("required_skills", new JsonSchemaBuilder()
                         .Type(SchemaValueType.Array)
-                        .Items(skillAttributeSchema)
+                        .Items(new JsonSchemaBuilder().Ref("#/$defs/skill"))
                         .Description(OfferAttributesPrompt.RequiredSkills)
                     ),
                     ("nice_to_have_skills", new JsonSchemaBuilder()
                         .Type(SchemaValueType.Array)
-                        .Items(skillAttributeSchema)
+                        .Items(new JsonSchemaBuilder().Ref("#/$defs/skill"))
                         .Description(OfferAttributesPrompt.NiceToHaveSkills)
                     )
                 )
