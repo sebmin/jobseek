@@ -1,6 +1,6 @@
 # 🏆 Leaderboard Card: JobSeek-Attributes-gpt-4o-mini
 
-Run: 2026-10-07 17:25 UTC
+Run: 2026-10-14 09:53 UTC
 
 ## Must have
 
@@ -32,8 +32,8 @@ Run: 2026-10-07 17:25 UTC
 | NH-02 | A Polish description uses English technical names | 1/1 | ✅ PASS |
 | NH-03 | A long description yields the required skills | 1/1 | ✅ PASS |
 | NH-04 | A plus-item stays on the nice-to-have list | 1/1 | ✅ PASS |
-| NH-05 | Negation, levels, and the static list stay distinct | 1/1 | ✅ PASS |
+| NH-05 | Negation, levels, and the static list stay distinct | 0/1 | ❌ FAIL |
 | NH-06 | A buried .NET offer yields at least 50 required skills | 0/1 | ❌ FAIL |
-| | **Nice to have** | **5/6** | ❌ FAIL |
+| | **Nice to have** | **4/6** | ❌ FAIL |
 
-**Total** 15/16 ❌ FAIL
+**Total** 14/16 ❌ FAIL

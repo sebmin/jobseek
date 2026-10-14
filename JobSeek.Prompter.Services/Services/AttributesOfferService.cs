@@ -37,8 +37,8 @@ namespace JobSeek.Prompter.Services
         {
             List<ChatMessage> messages =
             [
-                new(ChatRole.System, OfferAttributesPrompt.System(requiredStaticSkills, niceToHaveStaticSkills)),
-                new(ChatRole.User, description)
+                new(ChatRole.System, OfferAttributesPrompt.System),
+                new(ChatRole.User, OfferAttributesPrompt.User(description, requiredStaticSkills, niceToHaveStaticSkills))
             ];
 
             ChatResponse<OfferAttributesResponse> response = await _chatClient.GetResponseAsync<OfferAttributesResponse>(
@@ -101,8 +101,8 @@ namespace JobSeek.Prompter.Services
 
             List<ChatMessage> messages =
             [
-                new(ChatRole.System, OfferAttributesPrompt.System(requiredStaticSkills, niceToHaveStaticSkills)),
-                new(ChatRole.User, description)
+                new(ChatRole.System, OfferAttributesPrompt.System),
+                new(ChatRole.User, OfferAttributesPrompt.User(description, requiredStaticSkills, niceToHaveStaticSkills))
             ];
 
             string schemaString = JsonSerializer.Serialize(responseSchema);

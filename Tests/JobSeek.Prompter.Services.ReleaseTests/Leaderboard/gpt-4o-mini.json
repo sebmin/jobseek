@@ -1,6 +1,6 @@
 {
   "model": "gpt-4o-mini",
-  "ranAt": "2026-10-07T17:25:02.0600035+00:00",
+  "ranAt": "2026-10-14T09:53:20.3781067+00:00",
   "criteria": [
     {
       "id": "MH-01",
@@ -65,7 +65,7 @@
     {
       "id": "NH-05",
       "name": "Negation, levels, and the static list stay distinct",
-      "passed": 1,
+      "passed": 0,
       "total": 1
     },
     {

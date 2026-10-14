@@ -90,6 +90,38 @@ Two local embedding models were scored on the same pairs. Names that should beco
 
 `prompter` sends that list as the allowed values for each skill name. Offer skills and candidate skills then share one dictionary, which is what the comparer matches on.
 
+## Cost optimization
+
+`gpt-4o-mini` bills input at $0.15 per million tokens. A later request that starts with the same tokens reuses that prefix: the first cache step is 1,024 tokens, and further steps are 128 tokens. Cached tokens cost $0.075 per million. The user message is billed at the full input price on every offer.
+
+### 1. Keep offer-specific text in the user message
+
+The response schema and the system prompt are shared by every offer. For the current master list of 306 skills the schema is 2,793 tokens. The system prompt is about 700 tokens. The shared prefix is 2,793 + 700 = **3,493** tokens.
+
+Tagged skills and the raw description change on every offer. `OfferAttributesPrompt.User` carries both. The system prompt stays the same from offer to offer, so those 3,493 tokens can be cached. Offer-specific text in the system prompt ends the identical prefix at that point, and the tokens after it are billed at $0.15 per million.
+
+A cache hit is counted in whole steps of 128. 3,493 ÷ 128 is 27 steps plus a remainder:
+
+- 27 × 128 = **3,456** tokens at the cached price
+- 3,493 − 3,456 = **37** tokens at the normal input price
+
+Cached tokens count as half a token in the bill. A hit on this prefix is billed as 3,456 × 0.5 + 37 = **1,765** token-equivalents.
+
+| Shared prefix | Full-price tokens | Cached tokens | Billed as | Price |
+|---|---:|---:|---:|---:|
+| Changes with the offer | 3,493 | 0 | 3,493 | $0.000524 |
+| Cache hit | 37 | 3,456 | 1,765 | $0.000265 |
+
+The prices are 3,493 / 1,000,000 × $0.15 = $0.00052395, and 3,456 / 1,000,000 × $0.075 + 37 / 1,000,000 × $0.15 = $0.00026475.
+
+The user message is about **700** tokens. It contains the static required and nice-to-have skills plus the job description, and those tokens change every offer, so they are billed at $0.15 per million on every call.
+
+| User message | Full input | Cache-hit input | Billed as | Price, no cache | Price, hit | Cut |
+|---|---:|---:|---:|---:|---:|---:|
+| 700 | 4,193 | 700 + 1,765 | 2,465 | $0.000629 | $0.000370 | **41.2%** |
+
+That is **1,728** token-equivalents less ($0.000259 per offer). One thousand cache hits cost about **$0.26** less ($0.629 versus $0.370). The first offer in a run pays the full prefix price and fills the cache.
+
 ## Download the embedding model
 
 The model files are not in the repo. `JobSeek.Normalizator.Services/Models/` is gitignored, so download them once on each machine. From the repository root:

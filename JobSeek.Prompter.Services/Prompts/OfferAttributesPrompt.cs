@@ -16,20 +16,9 @@ namespace JobSeek.Prompter.Prompts
         public const string SkillLevel =
             "Required strength from 1 to 5. 1 basic theory only, 2 theory plus a little practice, 3 working experience, 4 senior expert, 5 master or lead. A mention with no stated experience is 1.";
 
-        public static string System(
-            IReadOnlyList<SkillDto> requiredSkills,
-            IReadOnlyList<SkillDto> niceToHaveSkills)
-        {
-            return $"""
+        public const string System = $$"""
                 Extract technical skills from the job description.
                 The provided description can be in Polish or English.
-
-                Static skills are the skills that are already tagged on this offer so they are the most reliable source of skills.
-                Static required skills already tagged on this offer:
-                <skills>{FormatSkills(requiredSkills)}</skills>
-
-                Static nice-to-have skills already tagged on this offer:
-                <nice-to-have-skills>{FormatSkills(niceToHaveSkills)}</nice-to-have-skills>
 
                 Focus on sections that mention skills and technologies where it is mentioned as "umiejętności", "technologie", "kwalifikacje".
                 Put a skill from the requirements section in required_skills.
@@ -46,7 +35,7 @@ namespace JobSeek.Prompter.Prompts
                 5 means the highest level: master or lead of this skill.
                 A skill that is only named, with no experience stated, is 1.
 
-                Skills are strictrly technical skills so skip (don't inlcude them in the response):
+                Skills are strictly technical skills so skip (don't inlcude them in the response):
                 - benefits, 
                 -soft traits, 
                 - company facts, 
@@ -65,7 +54,28 @@ namespace JobSeek.Prompter.Prompts
                         The response should be in JSON format.
                     </rule>
                 </reponse_rules>
+
+                Example:
+                Description: "Wymagania: zaawansowana znajomość C# / .NET. Mile widziane: Docker. Nie używamy PHP. Angielski wymagany. "
+                required_skills: [{"skill_name":"C#","skill_level":4},{"skill_name":".NET","skill_level":4}]
+                nice_to_have_skills: [{"skill_name":"Docker","skill_level":1}]
+                """;
+
+        public static string User(
+            string description,
+            IReadOnlyList<SkillDto> requiredSkills,
+            IReadOnlyList<SkillDto> niceToHaveSkills)
+        {
+            return $"""
+                Static skills are the skills that are already tagged on this offer so they are the most reliable source of skills.
+                Static required skills already tagged on this offer:
+                <skills>{FormatSkills(requiredSkills)}</skills>
                 
+                Static nice-to-have skills already tagged on this offer:
+                <nice-to-have-skills>{FormatSkills(niceToHaveSkills)}</nice-to-have-skills>
+
+                Job description:
+                <job-description>{description}</job-description>
                 """;
         }
 
