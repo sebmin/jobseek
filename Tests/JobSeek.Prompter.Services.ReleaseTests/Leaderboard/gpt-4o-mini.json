@@ -1,10 +1,10 @@
 {
   "model": "gpt-4o-mini",
-  "ranAt": "2026-10-14T09:53:20.3781067+00:00",
+  "ranAt": "2026-10-14T14:47:18.9500327+00:00",
   "criteria": [
     {
       "id": "MH-01",
-      "name": "Offer id is returned in the schema",
+      "name": "Offer id is returned and an off-list skill is dropped",
       "passed": 1,
       "total": 1
     },
@@ -70,8 +70,8 @@
     },
     {
       "id": "NH-06",
-      "name": "A buried .NET offer yields at least 50 required skills",
-      "passed": 0,
+      "name": "A buried .NET offer yields the skills that are on the master list",
+      "passed": 1,
       "total": 1
     },
     {

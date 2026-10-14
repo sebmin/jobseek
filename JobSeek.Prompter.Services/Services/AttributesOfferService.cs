@@ -71,7 +71,7 @@ namespace JobSeek.Prompter.Services
                     ("skill_name", new JsonSchemaBuilder()
                         .Type(SchemaValueType.String)
                         .Enum(allowedEnumValues)
-                        .Description(OfferAttributesPrompt.SkillName)
+                        .Description(OfferAttributesPrompt.MasterListSkillName)
                     ),
                     ("skill_level", new JsonSchemaBuilder()
                         .Type(SchemaValueType.Integer)
@@ -80,7 +80,8 @@ namespace JobSeek.Prompter.Services
                         .Description(OfferAttributesPrompt.SkillLevel)
                     )
                 )
-                .Required("skill_name", "skill_level");
+                .Required("skill_name", "skill_level")
+                .AdditionalProperties(false);
 
             var responseSchema = new JsonSchemaBuilder()
                 .Type(SchemaValueType.Object)
@@ -97,11 +98,12 @@ namespace JobSeek.Prompter.Services
                     )
                 )
                 .Required("required_skills", "nice_to_have_skills")
+                .AdditionalProperties(false)
                 .Build();
 
             List<ChatMessage> messages =
             [
-                new(ChatRole.System, OfferAttributesPrompt.System),
+                new(ChatRole.System, OfferAttributesPrompt.MasterListSystem),
                 new(ChatRole.User, OfferAttributesPrompt.User(description, requiredStaticSkills, niceToHaveStaticSkills))
             ];
 
@@ -111,6 +113,10 @@ namespace JobSeek.Prompter.Services
             var options = new ChatOptions
             {
                 Temperature = 0,
+                AdditionalProperties = new AdditionalPropertiesDictionary
+                {
+                    ["strict"] = true
+                },
                 ResponseFormat = ChatResponseFormat.ForJsonSchema(
                     parsedSchemaDoc.RootElement,
                     "OfferAttributesResponse")

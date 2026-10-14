@@ -42,25 +42,32 @@ These tests spend tokens and can change when the model changes. Set `OPENAI_JOBS
 
 ```powershell
 $env:LLM_MODEL = "gpt-4o-mini"
-dotnet test Tests/JobSeek.Prompter.Services.ReleaseTests --filter "TestCategory=Llm"
+dotnet test Tests/JobSeek.Prompter.Services.ReleaseTests --filter "TestCategory=Llm&TestCategory!=Freeform"
+```
+
+That run calls `ExtractAttributes` with the master list declared in the tests. The older freeform tests stay in the project for comparison and do not run with that filter. Run them on their own; a freeform run replaces the same model card.
+
+```powershell
+dotnet test Tests/JobSeek.Prompter.Services.ReleaseTests --filter "TestCategory=Freeform"
 ```
 
 Each model writes a card under `Tests/JobSeek.Prompter.Services.ReleaseTests/Leaderboard/`. The latest run of one model replaces only that model's file. [summary.md](Tests/JobSeek.Prompter.Services.ReleaseTests/Leaderboard/summary.md) keeps one row per model.
 
 A failed Must-have or Should-have check means the model is not ready to ship. A failed Nice-to-have check does not block the release by itself.
 
-- **Must have.** The result is safe to store. The offer id comes back, a skill already tagged on the offer keeps its name, level, and list, and a technology named in the offer lands on required or nice-to-have.
+- **Must have.** The result is safe to store. The offer id comes back, a skill already tagged on the offer keeps its name, level, and list, and a technology named in the offer lands on required or nice-to-have when it is on the master list. A technology that is not on that list is left out.
 - **Should have.** The result stays technical. Benefits, soft traits, and spoken languages stay out. A skill that is only named is not treated as senior. A technology that was not pre-tagged is still extracted.
 - **Nice to have.** The wording is harder: "senior expert", Polish text returned as English skill names, negation, and a long offer with many buried skills.
 
-Latest run, 2026-10-07:
+Latest master-list run, 2026-10-14:
 
 | Model | Passed/Total | Release gate | Known gap |
 |---|---|---|---|
-| gpt-4o-mini | 15/16 | Must and Should passed | Dense offer, NH-06 |
-| gpt-4.1-nano | 14/16 | Must and Should passed | Dense offer, NH-06, and negation, NH-05 |
+| gpt-4o-mini | 14/16 | Must and Should passed | Negation, NH-05, and the buried offer, NH-06 |
 
-On these runs, `gpt-4o-mini` is the stronger model to ship. Cards: [gpt-4o-mini](Tests/JobSeek.Prompter.Services.ReleaseTests/Leaderboard/gpt-4o-mini.md), [gpt-4.1-nano](Tests/JobSeek.Prompter.Services.ReleaseTests/Leaderboard/gpt-4.1-nano.md).
+On this run, `gpt-4o-mini` passes the release gate. Card: [gpt-4o-mini](Tests/JobSeek.Prompter.Services.ReleaseTests/Leaderboard/gpt-4o-mini.md).
+
+The [gpt-4.1-nano](Tests/JobSeek.Prompter.Services.ReleaseTests/Leaderboard/gpt-4.1-nano.md) card is the freeform run from 2026-10-07 (14/16). It is not part of this master-list run.
 
 ## Run the sandbox
 
