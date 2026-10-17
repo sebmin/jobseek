@@ -51,27 +51,37 @@ internal static class PrompterProgram
         var json = await File.ReadAllTextAsync(offersFile);
         var sourceOffers = JsonSerializer.Deserialize<List<SourceOffer>>(json, JsonOptions) ?? [];
         var results = await ReadExistingAsync(outputFile);
-        var done = results.Select(offer => offer.Id).ToHashSet();
+        var done = CompletedIds(results);
         var masterSkills = await ReadMasterListAsync(masterListFile);
         var service = AttributesOfferService.CreateService();
         using var skillNormalizationService = SkillNormalizationService.CreateService(masterSkills);
+        using var skillCandidateService = SkillCandidateService.CreateService(masterSkills);
 
-        for (var index = 0; index < 10; index++)
+        for (var index = 0; index < sourceOffers.Count; index++)
         {
             var source = sourceOffers[index];
             if (!Guid.TryParse(source.Guid, out var id))
                 throw new InvalidOperationException($"Offer '{source.Slug}' has no guid.");
 
-            if (!done.Add(id))
+            var slug = source.Slug ?? "";
+            if (done.Contains(id))
             {
-                Console.WriteLine($"[{index + 1}/{sourceOffers.Count}] skip {source.Slug}");
+                Console.WriteLine($"[{index + 1}/{sourceOffers.Count}] skip {slug}");
                 continue;
             }
 
-            Console.WriteLine($"[{index + 1}/{sourceOffers.Count}] {source.Slug}");
             var required = MapAndNormalizeSkills(source.RequiredSkills, skillNormalizationService);
             var niceToHave = MapAndNormalizeSkills(source.NiceToHaveSkills, skillNormalizationService);
+            var candidateSkills = skillCandidateService.Select(
+                source.DescriptionRaw ?? "",
+                required.Select(skill => skill.Name).Concat(niceToHave.Select(skill => skill.Name)).ToList());
 
+            Console.WriteLine($"[{index + 1}/{sourceOffers.Count}] {slug} ({candidateSkills.Count} candidate skills)");
+            if (candidateSkills.Count == 0)
+            {
+                await SaveOfferAsync(outputFile, results, StaticRecord(id, slug, required, niceToHave, true));
+                continue;
+            }
 
             try
             {
@@ -79,25 +89,55 @@ internal static class PrompterProgram
                     id,
                     source.DescriptionRaw ?? "",
                     required,
-                    niceToHave, masterSkills);
-
-                results.Add(new OfferSkillsRecord(
-                    id,
-                    source.Slug ?? "",
-                    extracted.RequiredSkills,
-                    extracted.NiceToHaveSkills));
+                    niceToHave,
+                    candidateSkills.ToList());
+                await SaveOfferAsync(outputFile, results, ExtractedRecord(id, slug, extracted, true));
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine($"{source.Slug}: {ex.Message}");
-                continue;
+                Console.Error.WriteLine($"{slug}: {ex.Message}");
+                await SaveOfferAsync(outputFile, results, StaticRecord(id, slug, required, niceToHave, false));
             }
-
-            await SaveAsync(outputFile, results);
         }
 
         Console.WriteLine($"Wrote {results.Count} offers to {outputFile}");
         return 0;
+    }
+
+    private static HashSet<Guid> CompletedIds(IEnumerable<OfferSkillsRecord> results) =>
+        results.Where(offer => offer.isResponseValid != false).Select(offer => offer.Id).ToHashSet();
+
+    private static OfferSkillsRecord StaticRecord(
+        Guid id,
+        string slug,
+        List<SkillDto> required,
+        List<SkillDto> niceToHave,
+        bool isResponseValid) =>
+        new(id, slug, ToStaticRecords(required), ToStaticRecords(niceToHave), isResponseValid);
+
+    private static OfferSkillsRecord ExtractedRecord(Guid id, string slug, OfferAttributesDto extracted, bool isResponseValid) =>
+        new(id, slug, extracted.RequiredSkills, extracted.NiceToHaveSkills, isResponseValid);
+
+    private static async Task SaveOfferAsync(string outputFile, List<OfferSkillsRecord> results, OfferSkillsRecord record)
+    {
+        results.RemoveAll(offer => offer.Id == record.Id);
+        results.Add(record);
+        await SaveAsync(outputFile, results);
+    }
+
+    private static List<OfferSkillDto> ToStaticRecords(List<SkillDto> skills)
+    {
+        var combined = new List<OfferSkillDto>();
+        var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var skill in skills)
+        {
+            if (string.IsNullOrWhiteSpace(skill.Name) || !names.Add(skill.Name))
+                continue;
+
+            combined.Add(new OfferSkillDto(skill.Name, skill.Level, true));
+        }
+
+        return combined;
     }
 
     private static List<SkillDto> MapAndNormalizeSkills(List<SourceStaticSkill>? skills, ISkillNormalizationService skillNormalizationService) =>
@@ -144,7 +184,7 @@ internal static class PrompterProgram
 
         Options:
           --offers <file>       Parsed offers. Default: ./data/offers.json
-          --output <file>       Combined skills. Default: ./data/offer-master-attributes.json
+          --output <file>       Combined skills. Default: ./data/offer-master-strict-attributes.json
           --master-list <file>  Canonical skill names. Default: ./data/skill-master-list.json
           --help                Show this help
 
@@ -161,7 +201,7 @@ internal static class PrompterProgram
         out string error)
     {
         offersFile = Path.Combine(Directory.GetCurrentDirectory(), "data", "offers.json");
-        outputFile = Path.Combine(Directory.GetCurrentDirectory(), "data", "offer-master-attributes.json");
+        outputFile = Path.Combine(Directory.GetCurrentDirectory(), "data", "offer-master-strict-attributes.json");
         masterListFile = Path.Combine(Directory.GetCurrentDirectory(), "data", "skill-master-list.json");
         help = false;
         error = "";
@@ -206,5 +246,6 @@ internal static class PrompterProgram
         Guid Id,
         string Slug,
         IReadOnlyList<OfferSkillDto> RequiredSkills,
-        IReadOnlyList<OfferSkillDto> NiceToHaveSkills);
+        IReadOnlyList<OfferSkillDto> NiceToHaveSkills,
+        bool? isResponseValid);
 }
