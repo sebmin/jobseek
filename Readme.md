@@ -8,7 +8,8 @@ There is no web form, CV upload, or chat yet. Those are listed under [Roadmap](#
 
 | Piece | What it does |
 |---|---|
-| `AttributesOfferService` | Sends the offer text to the model and reads skills back as a fixed structure. The master skill list is written into the response schema as the allowed skill names, so the model can only return skills from that dictionary. Temperature is 0. |
+| `SkillCandidateService` | Builds a short skill list for one offer from the master list. BM25 and local embeddings are fused with reciprocal rank fusion. The paid model is not used. |
+| `AttributesOfferService` | `ExtractAttributes` sends that short list as a strict enum. The call is cancelled after 45 seconds and is not retried. A skill that is not in the enum is left out. `ExtractRawAttributes` has no strict grammar: `skill_name` is an allowed value, and `skill_raw` is a technical skill that is not on the list. Temperature is 0. The sandbox calls `ExtractAttributes`. |
 | Release tests | The same offers go through the model. Must-have and Should-have rules block a release. A Nice-to-have miss is a known limit. |
 | `AttributeComparerService` | Scores a candidate against an offer. Required skills count for 0.8, nice-to-have skills for 0.2. |
 | `CategoryOfferService` | Maps a parsed offer onto the fields the comparer uses. |
@@ -19,7 +20,9 @@ Stack: .NET 10, C#, ASP.NET-style contracts, `Microsoft.Extensions.AI`, OpenAI s
 
 ```mermaid
 flowchart LR
-  offer["Offer text"] --> extract["AttributesOfferService"]
+  offer["Offer text"] --> select["SkillCandidateService"]
+  master["Master skill list"] --> select
+  select --> extract["AttributesOfferService"]
   extract --> skills["Structured skills"]
   skills --> score["AttributeComparerService"]
   candidate["Candidate skills"] --> score
@@ -35,6 +38,8 @@ dotnet test
 ```
 
 `JobSeek.runsettings` excludes `TestCategory=Llm`.
+
+`Tests/JobSeek.Pipeline.IntegrationTests` runs about ten offers through `SkillCandidateService`, a stand-in extractor, and `AttributeComparerService`. The stand-in records the shortlist and returns fixed skills, so the test checks ranking without calling a model. The matching offer ranks first, a Docker-only offer ranks below it, and an offer with no shared skills ranks last. Separate cases keep a static skill the description never mentions, keep `dotnet` and `javascripcie` on the shortlist, and rank a high-level C# match above a low-level one.
 
 ## Run the release tests
 
@@ -81,7 +86,9 @@ dotnet run --project JobSeek.Sandbox -- categorizator --help
 dotnet run --project JobSeek.Sandbox -- normalizator --help
 ```
 
-`prompter` needs `OPENAI_JOBSEEK_API_KEY`.
+`prompter` needs `OPENAI_JOBSEEK_API_KEY`. It reads `data/offers.json` and `data/skill-master-list.json`, builds the local shortlist, and writes `data/offer-master-strict-attributes.json`. An offer already saved with a missing or true `isResponseValid` is skipped. A timeout or any other exception is saved with the static skills and `isResponseValid` false, and the next run tries that offer again. When an offer has no candidate skills, the static skills are saved and the model is not called.
+
+To run the raw path, change the `ExtractAttributes` call in `PrompterProgram` to `ExtractRawAttributes` and set `--output`, for example `data/offer-master-raw-attributes.json`.
 
 ## Build the master skill list
 
@@ -95,7 +102,17 @@ Run it from the repository root. Before consolidation the extracted names were 5
 
 Two local embedding models were scored on the same pairs. Names that should become one skill: `javascript` / `js`, `unit tests` / `unit testing`, and Polish `bazy relacyjne` / `relational databases`. Names that should stay apart: `java` / `javascript`, `c#` / `c++`, and `react` / `kubernetes`. `multilingual-e5-small` gave high scores to unrelated skills as well as to aliases, so one cutoff could not both merge the aliases and keep Java apart from JavaScript. `paraphrase-multilingual-MiniLM-L12-v2` leaves a gap between those groups. The cutoff is 0.57.
 
-`prompter` sends that list as the allowed values for each skill name. Offer skills and candidate skills then share one dictionary, which is what the comparer matches on.
+`prompter` does not send all 306 names to the paid model. `SkillCandidateService` first picks at most 30 of them on this machine. Offer skills and candidate skills still share the master list, which is what the comparer matches on.
+
+### Select 30 skills locally
+
+The shortlist is built from two searches. The paid model is called only after that list exists.
+
+**BM25.** The offer text is the document. A master skill scores when its words appear together, in order. `entity framework` counts. The same words in different sentences do not. An alias such as `dotnet` scores as `.NET`.
+
+**Embeddings.** The local MiniLM model embeds the 306 master names once, at startup. Short stretches of the offer, one to three words long, are embedded the same way and compared with those vectors. A stretch is kept when its cosine with a master name is at least 0.90.
+
+**RRF.** Reciprocal rank fusion merges the two ranked lists, with the constant `k = 60`. A skill on both lists scores `1/(60 + BM25 rank) + 1/(60 + embedding rank)`. A BM25 hit is kept even when the list is already at 30. Embedding-only names fill the places that remain, highest fused score first, and the list stops at 30.
 
 ## Cost optimization
 
@@ -144,6 +161,12 @@ That is **1,459** fewer input tokens, **30.7%**. At the full input price the cut
 
 This cut is on the request size, so it applies to the first offer in a run as well as to later ones. The cache figures above use a 2,793-token schema from before this change. They need a new split of schema, system prompt, and user message before they match the 3,291-token call.
 
+### 3. Define the shortlist as the enum
+
+`prompter` used to put all 306 master names in `skill_name`. `SkillCandidateService` now picks at most 30 names locally, and `ExtractAttributes` writes those names as the enum inside `$defs/skill`. Both arrays still use `{ "$ref": "#/$defs/skill" }`.
+
+The enum is the large part of the schema, so 30 names are a smaller request than 306. That cut applies to the first offer in a run and to later ones. Strict mode compiles a grammar from that enum, which is why the strict call is cancelled after 45 seconds. The token tables in points 1 and 2 were measured on the 306-name schema.
+
 ## Download the embedding model
 
 The model files are not in the repo. `JobSeek.Normalizator.Services/Models/` is gitignored, so download them once on each machine. From the repository root:
@@ -163,10 +186,11 @@ Save the quantized ONNX file as `model.onnx`. The normalizator and its unit test
 JobSeek.Categorizator.Contracts / Services   offer and candidate models, mapping
 JobSeek.Prompter.Contracts / Services        structured skill extraction
 JobSeek.Comparator.Contracts / Services      ranking
-JobSeek.Normalizator.Contracts / Services    master skill list
+JobSeek.Normalizator.Contracts / Services    master skill list and per-offer shortlist
 JobSeek.Sandbox                              console runner
 Tests/JobSeek.Comparator.Services.UnitTests  offline ranking tests
 Tests/JobSeek.Normalizator.Services.UnitTests offline consolidation and normalization tests
+Tests/JobSeek.Pipeline.IntegrationTests      offline shortlist, extract, and score
 Tests/JobSeek.Prompter.Services.ReleaseTests ship / no-ship checks
 ```
 

@@ -27,4 +27,25 @@ namespace JobSeek.Prompter.Models.StructureOutput
         [Description(OfferAttributesPrompt.SkillLevel)]
         public int SkillLevel { get; set; }
     }
+
+    internal sealed class MasterListOfferAttributesResponse
+    {
+        [JsonPropertyName("required_skills")]
+        public List<MasterListSkillAttribute> RequiredSkills { get; set; } = [];
+
+        [JsonPropertyName("nice_to_have_skills")]
+        public List<MasterListSkillAttribute> NiceToHaveSkills { get; set; } = [];
+    }
+
+    internal sealed class MasterListSkillAttribute
+    {
+        [JsonPropertyName("skill_name")]
+        public string? SkillName { get; set; }
+
+        [JsonPropertyName("skill_raw")]
+        public string? SkillRaw { get; set; }
+
+        [JsonPropertyName("skill_level")]
+        public int SkillLevel { get; set; }
+    }
 }

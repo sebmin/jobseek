@@ -23,6 +23,8 @@ public class SkillAliasProvider : ISkillAliasProvider
         return _aliases.TryGetValue(rawSkill.Trim(), out var canonical) ? canonical : null;
     }
 
+    public IEnumerable<KeyValuePair<string, string>> Entries => _aliases;
+
     private static string Resolve()
     {
         var fileName = Path.Combine("Data", "skill-aliases.json");
@@ -47,4 +49,6 @@ public class SkillAliasProvider : ISkillAliasProvider
 internal interface ISkillAliasProvider
 {
     string? Resolve(string rawSkill);
+
+    IEnumerable<KeyValuePair<string, string>> Entries { get; }
 }

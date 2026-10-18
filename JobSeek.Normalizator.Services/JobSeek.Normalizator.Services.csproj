@@ -19,6 +19,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="JobSeek.Normalizator.Services.UnitTests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Content Include="Data\skill-aliases.json" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="Models\paraphrase-multilingual-MiniLM-L12-v2\model.onnx" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="Models\paraphrase-multilingual-MiniLM-L12-v2\sentencepiece.bpe.model" CopyToOutputDirectory="PreserveNewest" />
