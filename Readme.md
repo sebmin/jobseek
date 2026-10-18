@@ -39,6 +39,8 @@ dotnet test
 
 `JobSeek.runsettings` excludes `TestCategory=Llm`.
 
+`Tests/JobSeek.Pipeline.IntegrationTests` runs about ten offers through `SkillCandidateService`, a stand-in extractor, and `AttributeComparerService`. The stand-in records the shortlist and returns fixed skills, so the test checks ranking without calling a model. The matching offer ranks first, a Docker-only offer ranks below it, and an offer with no shared skills ranks last. Separate cases keep a static skill the description never mentions, keep `dotnet` and `javascripcie` on the shortlist, and rank a high-level C# match above a low-level one.
+
 ## Run the release tests
 
 These tests spend tokens and can change when the model changes. Set `OPENAI_JOBSEEK_API_KEY`. `LLM_MODEL` defaults to `gpt-4o-mini`.
@@ -188,6 +190,7 @@ JobSeek.Normalizator.Contracts / Services    master skill list and per-offer sho
 JobSeek.Sandbox                              console runner
 Tests/JobSeek.Comparator.Services.UnitTests  offline ranking tests
 Tests/JobSeek.Normalizator.Services.UnitTests offline consolidation and normalization tests
+Tests/JobSeek.Pipeline.IntegrationTests      offline shortlist, extract, and score
 Tests/JobSeek.Prompter.Services.ReleaseTests ship / no-ship checks
 ```
 
